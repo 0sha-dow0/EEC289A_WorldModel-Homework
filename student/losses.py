@@ -10,12 +10,16 @@ _update_counter = 0
 
 
 def _curriculum_horizon(target_horizon: int, ramp_updates: int, start_horizon: int = 10) -> int:
-    """Linearly ramp from start_horizon to target_horizon over ramp_updates."""
-    if ramp_updates <= 0:
-        return int(target_horizon)
+    """Linearly ramp from start_horizon to target_horizon over ramp_updates.
+    If target is already <= start, skip the curriculum and use target directly
+    (this is the case during the locked unit test and during smoke configs)."""
+    target_horizon = int(target_horizon)
+    start_horizon = int(start_horizon)
+    if ramp_updates <= 0 or target_horizon <= start_horizon:
+        return target_horizon
     progress = min(_update_counter / float(ramp_updates), 1.0)
     cur = int(round(start_horizon + (target_horizon - start_horizon) * progress))
-    return max(start_horizon, min(cur, int(target_horizon)))
+    return max(start_horizon, min(cur, target_horizon))
 
 
 def one_step_delta_loss(model, states, actions, normalizer):
@@ -83,7 +87,7 @@ def compute_loss(model, batch, normalizer, cfg):
     horizon = _curriculum_horizon(target_horizon, ramp_updates, start_horizon)
     # Cap by what the sequence length actually supports
     max_possible = s.shape[1] - warmup - 1
-    horizon = max(start_horizon, min(horizon, max_possible))
+    horizon = max(1, min(horizon, max_possible))
 
     one = one_step_delta_loss(model, s, a, normalizer)
     roll = rollout_loss(model, s, a, normalizer, warmup, horizon, tail_w, n_starts)
