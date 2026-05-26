@@ -20,7 +20,7 @@ class _ResidualBlock(nn.Module):
 
 class StudentWorldModel(nn.Module):
     def __init__(self, obs_dim=4, act_dim=1, hidden_dim=256, num_layers=4,
-                 use_gru=False, delta_limit=3.0, expansion=2, dropout=0.0):
+                 use_gru=False, delta_limit=3.0, expansion=2, dropout=0.1):
         super().__init__()
         self.use_gru = bool(use_gru)
         self.delta_limit = float(delta_limit)
@@ -32,7 +32,7 @@ class StudentWorldModel(nn.Module):
         self.out_ln = nn.LayerNorm(hidden_dim)
         self.head = nn.Linear(hidden_dim, obs_dim)
         nn.init.zeros_(self.head.bias)
-        nn.init.normal_(self.head.weight, std=1.0e-3)  # near-identity at init
+        nn.init.normal_(self.head.weight, std=1.0e-3)
 
     def initial_hidden(self, batch_size, device):
         if not self.use_gru:
